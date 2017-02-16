@@ -5,7 +5,7 @@
 Serial3.setup(9600,{rx:P0, tx: P1});
 var at = require('AT').connect(Serial3);
 
-var ftp = "";        //Адресс ftp.
+var ftp = "";        //Адрес ftp.
 var user = "";       //Пользователь.
 var password = "";   //Пароль.
 var dir = "temp/";
