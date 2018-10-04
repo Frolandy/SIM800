@@ -1,6 +1,6 @@
 /*
 
-///Пример работы отправки файла на сервер 
+///Sendig file to the server
 
 Serial3.setup(9600,{rx:P0, tx: P1});
 var at = require('AT').connect(Serial3);
