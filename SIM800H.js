@@ -4,7 +4,6 @@ var sockData = ["","","","",""];
 var MAXSOCKETS = 5;
 var busy = false;
 
-//Подача 1 и 0 на пин.
 function ON(Pin){
     Pin.mode('output');
     Pin.write(true);
@@ -14,7 +13,6 @@ function OFF(Pin){
     Pin.write(false);
 }
   
-
 function unregisterSocketCallbacks(sckt) {
     at.unregister('>');
     at.unregisterLine(sckt + ', SEND OK');
@@ -469,7 +467,6 @@ var simFuncs = {
     at.cmd("AT+FTPPUT=1\r\n", 1000, cb);
   }
 };
-
 
 exports.connect = function(usart, powerPin, connectedCallback) {
   simFuncs.at = at = at = require('AT').connect(usart);
