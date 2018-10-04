@@ -1,43 +1,3 @@
-/*
-
-///Example: Sendig file to the server
-
-Serial3.setup(9600,{rx:P0, tx: P1});
-var at = require('AT').connect(Serial3);
-
-var ftp = "";        //Адрес ftp.
-var user = "";       //Пользователь.
-var password = "";   //Пароль.
-var dir = "temp/";
-var fileName = "test.txt";
-var data = "TEST";
-var maxByte = data.length;
-var APN = "internet.beeline.ru";
-var user = "beeline";
-var password = "beeline";
-
-var sim = require('SIM800H').connect(Serial3, P5, function(err){
-  if(err) throw err;
-  sim.connect(APN, user, password, function(err) {
-    if (err) throw err;
-  sim.getIP(function(err, ip) {
-      if (err) throw err;
-      console.log('IP:' + ip);
-  sim.ftpConnect(ftp, user, password, function(err){
-  if (err) throw err;
-    sim.ftpPutPathName(dir, fileName, function(err){
-      if(err) throw err;
-      sim.ftpPut(maxByte, data, function(err){
-        if(err) throw err;
-      });
-      });
-      });
-    });
-  });
-});
-*/
-
-
 var at;
 var socks = [];
 var sockData = ["","","","",""];
@@ -211,8 +171,6 @@ var simFuncs = {
     };
   },
 
-  /*Включение модема 1 на powerPin, через секунду выставляем 0, чтобы не отрубился. 
-  Через 15 секунд (время на поиск сети и т.д.) после включения автоматически начинает инициализацию*/
   "powerOn": function(powerPin, callback){ 
     ON(powerPin);
     setTimeout(function(){
@@ -221,12 +179,10 @@ var simFuncs = {
     }, 1000);
   },
 
-//Выключение модема через resetPin.
   "powerOff": function(resetPin){       
     setTimeout(ON, 10000, resetPin);
   },
 
-  // инициализация
   "init": function(callback) {
     var s = 0;
     var cb = function(r) {
@@ -302,17 +258,15 @@ var simFuncs = {
           break;
       }
     };
-    at.cmd("ATE0\r\n",3000,cb); //отключение эхо.
+    at.cmd("ATE0\r\n",3000,cb);
   },
 
-  //Версия модема
   "getVersion": function(callback) {
     at.cmd("AT+GMR\r\n", 1000, function(d) {
       callback(null,d);
     });
   },
 
-  //Настройка подключения к интернету
   "connect": function(apn, username, password, callback) {
     var s = 0;
     var cb = function(r) {
@@ -339,8 +293,7 @@ var simFuncs = {
     };
     at.cmd('AT+CSTT="' + apn + '", "' + username + '", "' + password + '"\r\n', 1000, cb); //Установка APN, username, password. 
   },
-
-  //Получение IP.
+  
   "getIP": function(callback) {
     var ip;
     var cb = function(r) {
@@ -353,20 +306,19 @@ var simFuncs = {
         callback(null, ip);
       }
     };
-    at.cmd('AT+CIFSR\r\n', 2000, cb); //Получение ip.
+    at.cmd('AT+CIFSR\r\n', 2000, cb);
   },
 
-  //Данные ftp соединения хост или url, имя, пароль.
   "ftpConnect": function(ftpHost, username, password, callback) {
-    at.cmd("AT+SAPBR=0,1\r\n", 1000); // Разорвать установленные ранее соединения с ftp/
-    at.cmd('AT+FTPPUTOPT="STOR"\r\n', 1000); // Создавать новый файлы, если их нет или перезаписывать существующие.
+    at.cmd("AT+SAPBR=0,1\r\n", 1000);
+    at.cmd('AT+FTPPUTOPT="STOR"\r\n', 1000);
     var s = 0;
     var cb = function(r) {
       switch(s){
         case 0:
         if(r === 'OK') {
           s = 1;
-          at.cmd('AT+FTPCID=1\r\n', 2000, cb); //Установка CID для FTP сессии.
+          at.cmd('AT+FTPCID=1\r\n', 2000, cb);
         } else if(r){
           callback('Error connect to GPRS:' + r);
         }
@@ -374,7 +326,7 @@ var simFuncs = {
         case 1:
         if(r === 'OK'){
           s = 2;
-          at.cmd('AT+FTPSERV="' + ftpHost + '"\r\n', 2000, cb); //Хост сервера или url.
+          at.cmd('AT+FTPSERV="' + ftpHost + '"\r\n', 2000, cb);
         } else if(r) {
           callback('Error in CID:' + r);
         }
@@ -382,7 +334,7 @@ var simFuncs = {
         case 2:
         if(r === 'OK') {
           s = 3;
-          at.cmd('AT+FTPUN="' + username + '"\r\n', 2000, cb); //Имя пользователя.
+          at.cmd('AT+FTPUN="' + username + '"\r\n', 2000, cb);
         } else if(r) {
           callback('Error ftpUrl:' + r);
         }
@@ -390,7 +342,7 @@ var simFuncs = {
         case 3:
         if(r === 'OK') {
           s = 4;
-          at.cmd('AT+FTPPW="' + password + '"\r\n', 2000, cb); //Пароль.
+          at.cmd('AT+FTPPW="' + password + '"\r\n', 2000, cb);
         } else if (r){
           callback('Error username:' + r);
         }
@@ -406,10 +358,9 @@ var simFuncs = {
         break;
       }
     };
-    at.cmd('AT+SAPBR=1,1\r\n', 2000, cb); //Открытие GPRS соединения для подключния к FTP.
+    at.cmd('AT+SAPBR=1,1\r\n', 2000, cb);
   }, 
 
-  //Установка директории и имени файла, откуда будем брать.
   "ftpGetPathName": function(dir, fileName, callback) {
     var s = 0;
     var cb = function(r) {
@@ -417,7 +368,7 @@ var simFuncs = {
         case 0:
         if(r === 'OK') {
           s = 1;
-          at.cmd('AT+FTPGETNAME="' + fileName + '"\r\n', 2000, cb); //Имя нужного файла.
+          at.cmd('AT+FTPGETNAME="' + fileName + '"\r\n', 2000, cb);
         } else if(r) {
           callback('Error dir:' + r);
         }
@@ -433,19 +384,17 @@ var simFuncs = {
         break;
       }
     };
-    at.cmd('AT+FTPGETPATH="' + dir + '"\r\n', 2000, cb); //Директория в которой лежит файл.
+    at.cmd('AT+FTPGETPATH="' + dir + '"\r\n', 2000, cb);
   },
 
   
-
-  //Соединение с ftp, возвращает данные и размер полученных данных.
   "ftpGet": function(maxByte, callback) {
     var s = 0;
     var cb = function(r) {
         switch(s) {
         case 0:
         s = 1;
-        setTimeout(function(){at.cmd('AT+FTPGET=2,' + maxByte + '\r\n',2000, cb);}, 4000); //Объем данных в байтах, которые нужно плучить.
+        setTimeout(function(){at.cmd('AT+FTPGET=2,' + maxByte + '\r\n',2000, cb);}, 4000);
         break;
         case 1:
         if(r && r != 'ERROR' && r != 'OK'){
@@ -456,10 +405,9 @@ var simFuncs = {
         break;
       }
     };
-    at.cmd("AT+FTPGET=1\r\n", 2000, cb); //Подключение к ftp.
+    at.cmd("AT+FTPGET=1\r\n", 2000, cb);
   }, 
 
-  //Установка директории и имени файла, куда будем класть.
   "ftpPutPathName": function(dir, fileName, callback) {
     var s = 0;
     var cb = function(r) {
@@ -467,7 +415,7 @@ var simFuncs = {
         case 0:
         if(r === 'OK') {
           s = 1;
-          at.cmd('AT+FTPPUTNAME="' + fileName + '"\r\n', 2000, cb); //Имя записываемого файла.
+          at.cmd('AT+FTPPUTNAME="' + fileName + '"\r\n', 2000, cb);
         } else if(r) {
           callback('Error dir:' + r);
         }
@@ -483,17 +431,16 @@ var simFuncs = {
         break;
       }
     };
-    at.cmd('AT+FTPPUTPATH="' + dir + '"\r\n', 2000, cb); //Директория, куда нужно записать.
+    at.cmd('AT+FTPPUTPATH="' + dir + '"\r\n', 2000, cb);
   },
 
-  //Соединение с ftp и отправить данные.
   "ftpPut": function(maxByte, data, callback) {
     var s = 0;
     var cb = function(r) {
         switch(s) {
         case 0:
           s = 1;
-          setTimeout(function(){at.cmd('AT+FTPPUT=2,' + maxByte + '\r\n',1000, cb);}, 4000); //Объем передаваемой информации в байтах.
+          setTimeout(function(){at.cmd('AT+FTPPUT=2,' + maxByte + '\r\n',1000, cb);}, 4000);
         break;
         case 1:
         if(r != 'ERROR'){
@@ -506,7 +453,7 @@ var simFuncs = {
         case 2:
         if (r === "OK") {
           s = 3;
-          at.cmd('AT+FTPPUT=2,0\r\n', 1000, cb); //Конец записи, закрытие сессии.
+          at.cmd('AT+FTPPUT=2,0\r\n', 1000, cb);
         } else if (r) {
           callback("Write Error: " +r);
         } 
@@ -519,16 +466,16 @@ var simFuncs = {
         break;
       }
     };
-    at.cmd("AT+FTPPUT=1\r\n", 1000, cb); //Соединение с ftp для записи.
+    at.cmd("AT+FTPPUT=1\r\n", 1000, cb);
   }
 };
 
 
 exports.connect = function(usart, powerPin, connectedCallback) {
   simFuncs.at = at = at = require('AT').connect(usart);
-  require("NetworkJS").create(netCallbacks); // В тонкости Network JS не лез, оставил эти моменты как есть.
+  require("NetworkJS").create(netCallbacks);
   at.register("+RECEIVE", receiveHandler);
   at.register("+D", receiveHandler2);
-  simFuncs.powerOn(powerPin, connectedCallback); // Автоматическое включение модема, если был выключен.
+  simFuncs.powerOn(powerPin, connectedCallback);
   return simFuncs;
 };
